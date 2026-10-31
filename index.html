@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b15">
+  <meta name="description" content="Ứng dụng quản lý và xếp lịch làm việc tự động">
+  <link rel="manifest" href="./manifest.json">
+  <title>XẾP LỊCH TỰ ĐỘNG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#060a13;--panel:#0b1220;--panel2:#101b2d;--line:#223653;--muted:#8799b5;--text:#e8f0ff;--cyan:#35dffc;--purple:#b184ff;--pink:#ff779c;--orange:#ffb45f;--radius:22px}
+    *{box-sizing:border-box} html{color-scheme:dark} body{margin:0;background:radial-gradient(ellipse at 15% -10%,#10223a 0,transparent 42%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh}
+    button,input,select,textarea{font:inherit} button{cursor:pointer;color:inherit}
+    .app{max-width:1440px;margin:auto;padding:22px 20px 60px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+    .brand h1{font-size:clamp(23px,4vw,34px);letter-spacing:.02em;color:var(--cyan);margin:0;font-weight:800;text-shadow:0 0 22px #35dffc33}
+    .brand p{color:var(--muted);margin:7px 0 0;font-size:13px}
+    .account{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .tabs{display:flex;gap:9px;overflow:auto;padding:2px 0 14px;scrollbar-width:none}
+    .tabs button,.btn{border:1px solid var(--line);background:#111c2d;border-radius:14px;padding:12px 16px;color:#a9bad4;white-space:nowrap;transition:.18s}
+    .tabs button.active,.btn.primary{border-color:var(--cyan);color:var(--cyan);background:#123044;box-shadow:0 0 0 1px #35dffc18}
+    .btn.danger{border-color:#80354d;color:#ff8da8;background:#311725}.btn.small{padding:8px 11px;font-size:13px}
+    button:active{transform:scale(.98)}
+    .panel{background:linear-gradient(145deg,#0b1220f5,#080e1af5);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:0 18px 55px #0005}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:5px 0 16px}
+    .toolbar h2{font-size:20px;margin:0 0 5px}.muted{color:var(--muted)}.smalltxt{font-size:13px}
+    .weeknav{display:flex;gap:8px}.weeknav button{width:44px;height:44px;border:1px solid #2a4966;background:#13283b;border-radius:14px;font-size:20px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .stat{border:1px solid var(--line);border-radius:17px;padding:16px;background:#0c1727}.stat strong{display:block;font-size:27px;color:#5be5f8;margin-bottom:7px}.stat span{font-size:13px;color:var(--muted)}
+    .legend{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 18px}.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#111d30;border-radius:30px;padding:9px 13px;font-size:13px}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+    .week{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:10px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x proximity}
+    .day{min-height:280px;border:1px solid #263b59;border-radius:20px;padding:12px;background:linear-gradient(180deg,#0d1727,#0a1220);scroll-snap-align:start;transition:.15s}
+    .day.over{border-color:var(--cyan);background:#10283a}
+    .dayhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;font-weight:700}.dayhead time{font-size:12px;color:var(--muted);font-weight:500}
+    .shift{position:relative;border:1.5px solid var(--job,#35dffc);border-radius:15px;padding:12px 10px;margin:9px 0;background:color-mix(in srgb,var(--job,#35dffc) 13%,#101a2b);touch-action:pan-y;cursor:grab;user-select:none}
+    .shift.dragging{opacity:.38}.shift b{display:block;color:var(--job,#35dffc);font-size:14px;padding-right:22px;margin-bottom:12px}.shift .time{font-weight:700;font-size:15px}.shift .note{font-size:12px;color:#a7b6cc;margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .shift .x{position:absolute;right:7px;top:7px;border:0;border-radius:50%;width:27px;height:27px;background:#68283f;color:#ff9bb1;font-size:19px;line-height:1}
+    .shift .edit{position:absolute;right:8px;bottom:8px;border:0;background:#ffffff12;border-radius:8px;padding:4px 7px;font-size:11px;color:#d9e7fa}
+    .deletezone{border:1px dashed #a83d5b;background:#2a1421;color:#ff7e9c;border-radius:18px;padding:18px;text-align:center;margin-top:5px;font-weight:600}
+    .hint{color:var(--orange);font-size:13px;margin:12px 0 0}
+    .view{display:none}.view.active{display:block}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .field{display:flex;flex-direction:column;gap:7px;margin-bottom:13px}.field label{font-size:13px;color:#aebed5}
+    input,select,textarea{width:100%;background:#08111f;border:1px solid #2a405e;border-radius:12px;padding:12px;color:var(--text);outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #35dffc17}
+    textarea{min-height:82px;resize:vertical}.form-actions{display:flex;gap:9px;flex-wrap:wrap}
+    .jobrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid var(--line);border-radius:14px;margin:9px 0;background:#0d1727}
+    .jobname{display:flex;align-items:center;gap:10px;font-weight:600}.jobrow input[type=color]{width:44px;height:36px;padding:3px}
+    .authbox{max-width:480px;margin:25px auto}.authbox h2{margin-top:0}.status{font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}.status.good{color:#6de5b0}.status.bad{color:#ff8da8}
+    .notice{padding:12px 14px;border:1px solid #70542b;background:#2a2114;color:#ffcf8d;border-radius:13px;font-size:13px;margin:12px 0}
+    .exportbox{white-space:pre-wrap;line-height:1.7;min-height:210px}
+    .footer{text-align:center;color:#657894;font-size:12px;margin:22px 0}
+    .modalback{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;padding:14px;z-index:20}.modalback.show{display:flex}
+    .modal{width:min(560px,100%);max-height:92vh;overflow:auto;background:#0b1423;border:1px solid #2b4565;border-radius:23px;padding:20px;box-shadow:0 20px 80px #000b}
+    .modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modalhead h3{margin:0}.close{border:0;background:#1c2a3d;border-radius:10px;padding:8px 12px}
+    .inline{display:flex;gap:10px;align-items:center}.inline>*{flex:1}
+    @media(max-width:700px){.app{padding:18px 12px 38px}.panel{padding:14px}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:23px}.stat span{font-size:11px}.grid2{grid-template-columns:1fr}.account .btn{padding:9px 11px}.brand p{font-size:11px}.week{grid-template-columns:repeat(7, minmax(220px, 78vw));gap:10px}.day{min-height:260px}.modalback{align-items:flex-end;padding:0}.modal{border-radius:22px 22px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>✦ XẾP LỊCH TỰ ĐỘNG</h1><p>Quản lý ca · Điều chỉnh linh hoạt · Kiểm tra điều kiện</p></div>
+    <div class="account"><button class="btn small" id="authToggle">Đăng nhập</button><button class="btn small" id="logoutBtn" hidden>Đăng xuất</button></div>
+  </header>
+
+  <nav class="tabs" aria-label="Điều hướng">
+    <button class="active" data-view="weekView">Lịch tuần</button>
+    <button id="addShiftTop">＋ Thêm ca</button>
+    <button data-view="settingsView">Cài đặt</button>
+    <button data-view="exportView">Xuất lịch</button>
+    <button data-view="helpView">Hướng dẫn</button>
+  </nav>
+
+  <section id="weekView" class="view active panel">
+    <div class="toolbar">
+      <div><h2>LỊCH TUẦN</h2><div class="muted smalltxt" id="weekLabel"></div></div>
+      <div class="weeknav"><button id="prevWeek" aria-label="Tuần trước">‹</button><button id="nextWeek" aria-label="Tuần sau">›</button></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong id="shiftCount">0</strong><span>Tổng ca</span></div>
+      <div class="stat"><strong id="hourCount">0.0h</strong><span>Tổng giờ</span></div>
+      <div class="stat"><strong id="jobCount">0</strong><span>Công việc</span></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="week" id="weekGrid"></div>
+    <div class="deletezone" id="deleteZone">⌫ KÉO CA VÀO ĐÂY ĐỂ XÓA</div>
+    <p class="hint">Giữ và kéo thẻ ca sang ngày khác hoặc kéo vào vùng xóa. Trên điện thoại, bạn cũng có thể dùng nút sửa để đổi ngày.</p>
+    <p class="muted smalltxt">Mẹo: Chạm dấu × trên thẻ để xóa nhanh. Ghi chú được giữ nguyên khi di chuyển ca.</p>
+  </section>
+
+  <section id="settingsView" class="view panel">
+    <div class="toolbar"><div><h2>CÀI ĐẶT LỊCH</h2><div class="muted smalltxt">Các quy tắc áp dụng khi kiểm tra lịch</div></div></div>
+    <div class="grid2">
+      <div class="field"><label for="restHours">Nghỉ tối thiểu giữa hai ca (giờ)</label><input id="restHours" type="number" min="0" max="48" step=".5"></div>
+      <div class="field"><label for="weeklyGoal">Mục tiêu giờ làm mỗi tuần</label><input id="weeklyGoal" type="number" min="0" max="168" step=".5"></div>
+      <div class="field"><label for="dailyLimit">Số ca tối đa cùng công việc trong ngày</label><input id="dailyLimit" type="number" min="1" max="20" step="1"></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="saveSettings">Lưu cài đặt</button><button class="btn" id="checkRules">Kiểm tra điều kiện tuần này</button></div>
+    <div id="ruleResult" class="status"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+    <h3>Quản lý công việc</h3>
+    <div class="grid2">
+      <div class="field"><label for="newJobName">Tên công việc mới</label><input id="newJobName" placeholder="Ví dụ: Công việc 1"></div>
+      <div class="field"><label for="newJobColor">Màu hiển thị</label><input id="newJobColor" type="color" value="#35dffc"></div>
+    </div>
+    <button class="btn primary" id="addJob">＋ Thêm công việc</button>
+    <div id="jobList" style="margin-top:12px"></div>
+  </section>
+
+  <section id="exportView" class="view panel">
+    <h2>XUẤT LỊCH</h2>
+    <div class="grid2">
+      <div class="field"><label for="exportWeek">Tuần cần xuất</label><input id="exportWeek" type="date"></div>
+      <div class="field"><label for="exportJob">Lọc công việc</label><select id="exportJob"><option value="all">Tất cả công việc</option></select></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="makeExport">Tạo nội dung lịch</button><button class="btn" id="copyExport">Sao chép</button></div>
+    <textarea class="exportbox" id="exportText" readonly placeholder="Nội dung lịch sẽ xuất hiện ở đây..."></textarea>
+    <div class="status" id="copyStatus"></div>
+  </section>
+
+  <section id="helpView" class="view panel">
+    <h2>HƯỚNG DẪN SỬ DỤNG</h2>
+    <ol style="line-height:1.9;color:#c2cee0;padding-left:22px">
+      <li>Vào <b>Cài đặt</b> để tạo các công việc và chọn màu riêng.</li>
+      <li>Chọn <b>＋ Thêm ca</b>, nhập công việc, ngày, giờ bắt đầu, giờ kết thúc và ghi chú.</li>
+      <li>Trong lịch tuần, kéo thẻ ca sang ngày khác. Trên điện thoại có thể chạm <b>Sửa</b> để đổi ngày/giờ.</li>
+      <li>Kéo thẻ vào vùng màu đỏ hoặc chạm dấu × để xóa ca.</li>
+      <li>Đăng nhập cùng một tài khoản trên các thiết bị để đồng bộ dữ liệu qua Supabase.</li>
+      <li>Vào <b>Xuất lịch</b> để tạo nội dung văn bản và sao chép chia sẻ.</li>
+    </ol>
+    <div class="notice">Lưu ý: Bản này cần cấu hình Supabase URL và anon key trong phần cấu hình ở đầu mã nguồn trước khi triển khai đồng bộ tài khoản. Không đưa service_role key vào trình duyệt.</div>
+  </section>
+
+  <section id="authView" class="view panel authbox">
+    <h2>TÀI KHOẢN</h2>
+    <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="email@example.com"></div>
+    <div class="field"><label for="authPassword">Mật khẩu</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Ít nhất 6 ký tự"></div>
+    <div class="form-actions"><button class="btn primary" id="signIn">Đăng nhập</button><button class="btn" id="signUp">Tạo tài khoản</button></div>
+    <div class="status" id="authStatus"></div>
+    <div class="notice">Bạn có thể dùng ứng dụng ở chế độ thiết bị này khi chưa cấu hình Supabase. Dữ liệu khi đó chỉ lưu trên trình duyệt hiện tại.</div>
+  </section>
+  <div class="footer">XẾP LỊCH TỰ ĐỘNG · Neon Planner</div>
+</div>
+
+<div class="modalback" id="shiftModal">
+  <div class="modal">
+    <div class="modalhead"><h3 id="modalTitle">THÊM CA LÀM</h3><button class="close" id="closeModal">✕</button></div>
+    <form id="shiftForm">
+      <input type="hidden" id="shiftId">
+      <div class="field"><label for="shiftJob">Công việc</label><select id="shiftJob" required></select></div>
+      <div class="field"><label for="shiftDate">Ngày làm</label><input id="shiftDate" type="date" required></div>
+      <div class="grid2">
+        <div class="field"><label for="startTime">Giờ bắt đầu</label><input id="startTime" type="time" value="08:00" required></div>
+        <div class="field"><label for="endTime">Giờ kết thúc</label><input id="endTime" type="time" value="16:00" required></div>
+      </div>
+      <div class="field"><label for="shiftNote">Ghi chú</label><textarea id="shiftNote" placeholder="Nội dung tùy ý..."></textarea></div>
+      <div class="form-actions"><button class="btn primary" type="submit">Lưu ca</button><button class="btn danger" type="button" id="deleteShift" hidden>Xóa ca</button></div>
+      <div class="status" id="shiftStatus"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(() => {
+  // CẤU HÌNH SUPABASE: điền Project URL và anon/public key tại đây.
+  const SUPABASE_URL = "https://mfrhzhdqxnncluyvnxqr.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_LXa6n4Rk1-xQa3tCgL_EgA_aAckxRjJ";
+  const STORAGE_KEY = "xep-lich-tu-dong-v1";
+  const $ = id => document.getElementById(id);
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+  const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const parseDate = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d,12); };
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const addDays = (s,n) => { const d=parseDate(s); d.setDate(d.getDate()+n); return iso(d); };
+  const monday = s => { const d=parseDate(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return iso(d); };
+  const fmt = s => parseDate(s).toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit"});
+  const dayNames=["CN","T2","T3","T4","T5","T6","T7"];
+  const defaultState = () => ({jobs:[{id:uid(),name:"Công việc 1",color:"#35dffc"},{id:uid(),name:"Công việc 2",color:"#b184ff"}],shifts:[],settings:{restHours:8,weeklyGoal:40,dailyLimit:2}});
+  let state = loadLocal(), weekStart=monday(todayISO()), supabase=null, user=null, channel=null, saveTimer=null, dragId=null;
+  function loadLocal(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||defaultState()}catch{return defaultState()}}
+  function persistLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+  function configured(){return window.supabase && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && SUPABASE_ANON_KEY.length>20 && !SUPABASE_ANON_KEY.includes("YOUR_")}
+  if(configured()) supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  function job(id){return state.jobs.find(j=>j.id===id&&!j.deletedAt)}
+  function activeJobs(){return state.jobs.filter(j=>!j.deletedAt)}
+  function activeShifts(){return state.shifts.filter(s=>!s.deletedAt)}
+  function duration(s){let [a,b]=[s.start,s.end].map(t=>{let [h,m]=t.split(":").map(Number);return h*60+m});if(b<=a)b+=1440;return b-a}
+  function hours(s){return duration(s)/60}
+  function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+  function weekShifts(){const end=addDays(weekStart,7);return state.shifts.filter(s=>s.date>=weekStart&&s.date<end)}
+  function render(){
+    $("weekLabel").textContent=`${fmt(weekStart)} – ${fmt(addDays(weekStart,6))}/${parseDate(addDays(weekStart,6)).getFullYear()}`;
+    const shifts=weekShifts();$("shiftCount").textContent=shifts.length;$("hourCount").textContent=shifts.reduce((n,s)=>n+hours(s),0).toFixed(1)+"h";$("jobCount").textContent=new Set(shifts.map(s=>s.jobId)).size;
+    $("legend").innerHTML=activeJobs().map(j=>`<span class="chip"><i class="dot" style="background:${esc(j.color)}"></i>${esc(j.name)}</span>`).join("");
+    $("weekGrid").innerHTML=Array.from({length:7},(_,i)=>{const date=addDays(weekStart,i),d=parseDate(date),list=activeShifts().filter(s=>s.date===date).sort((a,b)=>a.start.localeCompare(b.start));return `<div class="day" data-date="${date}"><div class="dayhead"><span>${dayNames[d.getDay()]}</span><time>${fmt(date)}</time></div>${list.map(s=>{const j=job(s.jobId)||{name:"Công việc đã xóa",color:"#8799b5"};return `<article class="shift" draggable="true" data-id="${s.id}" style="--job:${esc(j.color)}"><button class="x" data-delete="${s.id}" aria-label="Xóa ca">×</button><b>${esc(j.name)}</b><div class="time">${esc(s.start)}–${esc(s.end)}</div>${s.note?`<div class="note">${esc(s.note)}</div>`:""}<button class="edit" data-edit="${s.id}">Sửa</button></article>`}).join("")}</div>`}).join("");
+    $("jobList").innerHTML=activeJobs().map(j=>`<div class="jobrow"><div class="jobname"><i class="dot" style="background:${esc(j.color)}"></i><span>${esc(j.name)}</span></div><div class="inline" style="flex:0 0 auto"><input type="color" aria-label="Đổi màu" data-color="${j.id}" value="${esc(j.color)}"><button class="btn small" data-rename="${j.id}">Đổi tên</button><button class="btn small danger" data-removejob="${j.id}">Xóa</button></div></div>`).join("")||'<p class="muted">Chưa có công việc.</p>';
+    const opts=activeJobs().map(j=>`<option value="${j.id}">${esc(j.name)}</option>`).join("");$("shiftJob").innerHTML=opts;$("exportJob").innerHTML='<option value="all">Tất cả công việc</option>'+opts;
+    $("restHours").value=state.settings.restHours;$("weeklyGoal").value=state.settings.weeklyGoal;$("dailyLimit").value=state.settings.dailyLimit;
+    persistLocal();
+  }
+  function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".tabs [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===id))}
+  function openModal(s=null,date=todayISO()){ $("shiftForm").reset();$("shiftId").value=s?.id||"";$("modalTitle").textContent=s?"CHỈNH SỬA CA":"THÊM CA LÀM";$("shiftDate").value=s?.date||date;$("startTime").value=s?.start||"08:00";$("endTime").value=s?.end||"16:00";$("shiftNote").value=s?.note||"";if(s)$("shiftJob").value=s.jobId;$("deleteShift").hidden=!s;$("shiftStatus").textContent="";$("shiftModal").classList.add("show")}
+  function closeModal(){$("shiftModal").classList.remove("show")}
+  function saveShift(e){e.preventDefault();const id=$("shiftId").value||uid(),s={id,jobId:$("shiftJob").value,date:$("shiftDate").value,start:$("startTime").value,end:$("endTime").value,note:$("shiftNote").value.trim(),updatedAt:new Date().toISOString()};if(!s.jobId){$("shiftStatus").textContent="Hãy tạo công việc trước.";return}if(s.end===s.start){$("shiftStatus").textContent="Giờ kết thúc phải khác giờ bắt đầu.";return}const idx=state.shifts.findIndex(x=>x.id===id);if(idx>=0)state.shifts[idx]=s;else state.shifts.push(s);closeModal();render();queueSave()}
+  function removeShift(id){const s=activeShifts().find(x=>x.id===id);if(s){s.deletedAt=new Date().toISOString();s.updatedAt=s.deletedAt}render();queueSave()}
+  function queueSave(){persistLocal();if(!supabase||!user)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveRemote,450)}
+  async function saveRemote(){if(!supabase||!user)return;const payload={jobs:state.jobs,shifts:state.shifts,settings:state.settings};const {error}=await supabase.rpc("merge_planner_data",{p_data:payload});if(error)console.error("Supabase save:",error)}
+  async function loadRemote(){if(!supabase||!user)return;const {data,error}=await supabase.from("planner_data").select("data").eq("user_id",user.id).maybeSingle();if(error){console.error(error);return}if(data?.data){state={...defaultState(),...data.data};persistLocal();render()}else await saveRemote();subscribeRealtime()}
+  function subscribeRealtime(){if(!supabase||!user)return;if(channel)supabase.removeChannel(channel);channel=supabase.channel("planner-"+user.id).on("postgres_changes",{event:"UPDATE",schema:"public",table:"planner_data",filter:`user_id=eq.${user.id}`},payload=>{const incoming=payload.new?.data;if(incoming){state={...defaultState(),...incoming};persistLocal();render()}}).subscribe()}
+  async function authAction(kind){if(!supabase){$("authStatus").textContent="Chưa cấu hình Supabase. Bạn vẫn có thể dùng chế độ lưu trên thiết bị này.";return}const email=$("authEmail").value.trim(),password=$("authPassword").value;if(!email||!password){$("authStatus").textContent="Nhập email và mật khẩu.";return}const result=kind==="in"?await supabase.auth.signInWithPassword({email,password}):await supabase.auth.signUp({email,password});$("authStatus").textContent=result.error?result.error.message:(kind==="up"?"Đã gửi yêu cầu tạo tài khoản. Kiểm tra email nếu cần xác nhận.":"Đăng nhập thành công.");}
+  async function initAuth(){if(!supabase){$("authToggle").textContent="Tài khoản";$("authToggle").onclick=()=>showView("authView");return}const {data}=await supabase.auth.getSession();user=data.session?.user||null;updateAuthUI();if(user)await loadRemote();supabase.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;updateAuthUI();if(user)await loadRemote();else if(channel){supabase.removeChannel(channel);channel=null}})}
+  function updateAuthUI(){$("authToggle").textContent=user?(user.email||"Đã đăng nhập"):"Đăng nhập";$("logoutBtn").hidden=!user}
+  function checkRules(){const s=weekShifts(),issues=[],limit=Number(state.settings.dailyLimit),rest=Number(state.settings.restHours);for(let i=0;i<7;i++){const date=addDays(weekStart,i),day=s.filter(x=>x.date===date);const counts={};day.forEach(x=>counts[x.jobId]=(counts[x.jobId]||0)+1);Object.entries(counts).forEach(([id,n])=>{if(n>limit)issues.push(`${date}: ${job(id)?.name||"Công việc"} có ${n} ca, vượt giới hạn ${limit}.`)});const sorted=[...day].sort((a,b)=>a.start.localeCompare(b.start));for(let k=1;k<sorted.length;k++){let prev=sorted[k-1],cur=sorted[k];let prevEnd=duration(prev)+Number(prev.start.slice(0,2))*60+Number(prev.start.slice(3));let curStart=Number(cur.start.slice(0,2))*60+Number(cur.start.slice(3));if(curStart<prevEnd)curStart+=1440;if(curStart-prevEnd<rest*60)issues.push(`${date}: thời gian nghỉ giữa hai ca (${prev.start}–${prev.end} và ${cur.start%1440===curStart?cur.start:cur.start}) dưới ${rest} giờ.`)}}const total=s.reduce((n,x)=>n+hours(x),0),goal=Number(state.settings.weeklyGoal);if(goal&&total>goal)issues.push(`Tổng ${total.toFixed(1)} giờ vượt mục tiêu ${goal} giờ/tuần.`);$("ruleResult").textContent=issues.length?issues.join(" "):"Không phát hiện vi phạm theo các giới hạn đã cài đặt."; $("ruleResult").className="status "+(issues.length?"bad":"good")}
+  function makeExport(){const start=$("exportWeek").value||weekStart,ws=monday(start),end=addDays(ws,7),filter=$("exportJob").value;let out=`LỊCH TUẦN ${fmt(ws)} – ${fmt(addDays(ws,6))}\n`;for(let i=0;i<7;i++){const date=addDays(ws,i),d=parseDate(date),items=activeShifts().filter(s=>s.date===date&&(filter==="all"||s.jobId===filter)).sort((a,b)=>a.start.localeCompare(b.start));out+=`\n${["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"][d.getDay()]} (${fmt(date)}):\n`;out+=items.length?items.map(s=>`- ${job(s.jobId)?.name||"Công việc"}: ${s.start} – ${s.end}${s.note?" | "+s.note:""}`).join("\n"):"- Không có ca";out+="\n"}$("exportText").value=out}
+  $("prevWeek").onclick=()=>{weekStart=addDays(weekStart,-7);render()};$("nextWeek").onclick=()=>{weekStart=addDays(weekStart,7);render()};
+  $("addShiftTop").onclick=()=>{if(!activeJobs().length){showView("settingsView");return}openModal(null,weekStart)};
+  document.querySelectorAll(".tabs [data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+  $("closeModal").onclick=closeModal;$("shiftModal").addEventListener("click",e=>{if(e.target===$("shiftModal"))closeModal()});
+  $("shiftForm").onsubmit=saveShift;$("deleteShift").onclick=()=>{const id=$("shiftId").value;if(id)removeShift(id);closeModal()};
+  $("weekGrid").addEventListener("click",e=>{const del=e.target.closest("[data-delete]"),edit=e.target.closest("[data-edit]");if(del){removeShift(del.dataset.delete);return}if(edit){const s=activeShifts().find(x=>x.id===edit.dataset.edit);if(s)openModal(s)}});
+  $("weekGrid").addEventListener("dragstart",e=>{const card=e.target.closest(".shift");if(!card)return;dragId=card.dataset.id;card.classList.add("dragging");e.dataTransfer.setData("text/plain",dragId);e.dataTransfer.effectAllowed="move"});
+  $("weekGrid").addEventListener("dragend",e=>{e.target.closest(".shift")?.classList.remove("dragging");document.querySelectorAll(".day").forEach(d=>d.classList.remove("over"))});
+  $("weekGrid").addEventListener("dragover",e=>{const day=e.target.closest(".day");if(day){e.preventDefault();day.classList.add("over")}});
+  $("weekGrid").addEventListener("dragleave",e=>e.target.closest(".day")?.classList.remove("over"));
+  $("weekGrid").addEventListener("drop",e=>{const day=e.target.closest(".day");if(!day)return;e.preventDefault();const id=e.dataTransfer.getData("text/plain")||dragId,s=activeShifts().find(x=>x.id===id);if(s){s.date=day.dataset.date;s.updatedAt=new Date().toISOString();render();queueSave()}});
+  $("deleteZone").addEventListener("dragover",e=>{e.preventDefault();$("deleteZone").style.background="#512033"});$("deleteZone").addEventListener("dragleave",()=>{$("deleteZone").style.background=""});$("deleteZone").addEventListener("drop",e=>{e.preventDefault();const id=e.dataTransfer.getData("text/plain")||dragId;if(id)removeShift(id);$("deleteZone").style.background=""});
+  // Pointer/touch drag: long press a card, then release over another day or delete zone.
+  let touch=null; $("weekGrid").addEventListener("pointerdown",e=>{const card=e.target.closest(".shift");if(!card||e.target.closest("button"))return;touch={id:card.dataset.id,x:e.clientX,y:e.clientY,started:false,el:card};touch.timer=setTimeout(()=>{if(touch){touch.started=true;card.classList.add("dragging");navigator.vibrate?.(25)}},380)});
+  $("weekGrid").addEventListener("pointermove",e=>{if(!touch)return;if(Math.abs(e.clientX-touch.x)+Math.abs(e.clientY-touch.y)>18&&!touch.started){clearTimeout(touch.timer);touch=null}});
+  document.addEventListener("pointerup",e=>{if(!touch)return;clearTimeout(touch.timer);if(touch.started){const target=document.elementFromPoint(e.clientX,e.clientY),day=target?.closest(".day"),del=target?.closest("#deleteZone"),s=activeShifts().find(x=>x.id===touch.id);if(s&&day){s.date=day.dataset.date;s.updatedAt=new Date().toISOString();render();queueSave()}else if(s&&del)removeShift(s.id);touch.el.classList.remove("dragging")}touch=null});
+  $("addJob").onclick=()=>{const name=$("newJobName").value.trim();if(!name)return;if(activeJobs().some(j=>j.name.toLowerCase()===name.toLowerCase())){alert("Tên công việc đã tồn tại.");return}state.jobs.push({id:uid(),name,color:$("newJobColor").value});$("newJobName").value="";render();queueSave()};
+  $("jobList").addEventListener("click",e=>{const rename=e.target.closest("[data-rename]"),remove=e.target.closest("[data-removejob]");if(rename){const j=job(rename.dataset.rename),name=prompt("Tên công việc mới:",j?.name||"");if(name?.trim()){j.name=name.trim();j.updatedAt=new Date().toISOString();render();queueSave()}}if(remove){const j=job(remove.dataset.removejob);if(!j)return;if(!confirm(`Xóa "${j.name}"? Các ca thuộc công việc này cũng sẽ bị xóa.`))return;j.deletedAt=new Date().toISOString();j.updatedAt=j.deletedAt;state.shifts.filter(x=>x.jobId===j.id&&!x.deletedAt).forEach(x=>{x.deletedAt=j.deletedAt;x.updatedAt=j.deletedAt});render();queueSave()}});
+  $("jobList").addEventListener("change",e=>{const c=e.target.closest("[data-color]");if(c){const j=job(c.dataset.color);if(j){j.color=c.value;j.updatedAt=new Date().toISOString();render();queueSave()}}});
+  $("saveSettings").onclick=()=>{state.settings={restHours:Number($("restHours").value)||0,weeklyGoal:Number($("weeklyGoal").value)||0,dailyLimit:Math.max(1,Number($("dailyLimit").value)||1)};render();queueSave();$("ruleResult").textContent="Đã lưu cài đặt.";};
+  $("checkRules").onclick=checkRules;$("makeExport").onclick=makeExport;$("copyExport").onclick=async()=>{if(!$("exportText").value)makeExport();try{await navigator.clipboard.writeText($("exportText").value);$("copyStatus").textContent="Đã sao chép lịch."; }catch{$("exportText").select();document.execCommand("copy");$("copyStatus").textContent="Đã sao chép lịch."}};
+  $("exportWeek").value=weekStart;$("authToggle").onclick=()=>showView("authView");$("signIn").onclick=()=>authAction("in");$("signUp").onclick=()=>authAction("up");
+  $("logoutBtn").onclick=async()=>{if(supabase)await supabase.auth.signOut();user=null;updateAuthUI()};
+  render();initAuth();
+  if("serviceWorker" in navigator && location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
+})();
+</script>
+</body>
+</html>
