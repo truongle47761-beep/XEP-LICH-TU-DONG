@@ -1,0 +1,10 @@
+{
+  "name": "Xếp Lịch Tự Động",
+  "short_name": "Xếp Lịch",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#060a13",
+  "theme_color": "#070b15",
+  "description": "Quản lý và xếp lịch làm việc",
+  "icons": []
+}
