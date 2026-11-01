@@ -296,7 +296,7 @@
           if((perDay[day]||0)>=dailyMax)break;
           if(c.job.done+c.len>c.job.target+0.001)continue;
           const a=toMin(c.start),b=toMin(c.end);
-          const conflict=chosen.some(x=>x.date===c.date&&a<toMin(x.end)+rest*60&&b+rest*60>toMin(x.start));
+          const absoluteStart=c.day*1440+a,absoluteEnd=c.day*1440+b;const conflict=chosen.some(x=>{const oldDay=Math.round((parseDate(x.date)-parseDate(week))/86400000),oldStart=oldDay*1440+toMin(x.start),oldEnd=oldDay*1440+toMin(x.end);return absoluteStart<oldEnd+rest*60&&absoluteEnd+rest*60>oldStart;});
           if(conflict)continue;
           chosen.push({id:uid(),jobId:c.job.job.id,date:c.date,start:c.start,end:c.end,note:"Ca cố định · tự động xếp",generated:true});
           c.job.done+=c.len;used.add(c.job.job.id+"|"+c.day+"|"+c.slot);perDay[day]=(perDay[day]||0)+1;progress=true;
