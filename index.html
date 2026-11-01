@@ -87,6 +87,7 @@
       <div class="stat"><strong id="hourCount">0.0h</strong><span>Tổng giờ</span></div>
       <div class="stat"><strong id="jobCount">0</strong><span>Công việc</span></div>
     </div>
+    <div id="weekConflict" class="status" style="margin:12px 0"></div>
     <div class="legend" id="legend"></div>
     <div class="week" id="weekGrid"></div>
     <div class="deletezone" id="deleteZone">⌫ KÉO CA VÀO ĐÂY ĐỂ XÓA</div>
@@ -205,9 +206,17 @@
   function hours(s){return duration(s)/60}
   function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
   function weekShifts(){const end=addDays(weekStart,7);return state.shifts.filter(s=>s.date>=weekStart&&s.date<end)}
+  function updateWeekConflicts(){
+    const week=monday(weekStart),items=weekShifts().filter(x=>!x.deletedAt).map(x=>{const day=Math.round((parseDate(x.date)-parseDate(week))/86400000),start=day*1440+Number(x.start.slice(0,2))*60+Number(x.start.slice(3)),end=start+duration(x);return {...x,absStart:start,absEnd:end}}).sort((a,b)=>a.absStart-b.absStart);
+    const conflicts=[];
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=items[i],b=items[j];if(b.absStart>=a.absEnd)break;if(a.absStart<b.absEnd&&b.absStart<a.absEnd){const label=x=>(job(x.jobId)?.name||"Công việc đã xóa")+" ("+x.start+"–"+x.end+")";conflicts.push({date:a.date,a:label(a),b:label(b)});}}
+    const box=$("weekConflict");if(!box)return;
+    if(!conflicts.length){box.textContent="✓ Không có ca bị trùng trong tuần này.";box.className="status good";return;}
+    box.className="notice";box.innerHTML="<b>⚠ Phát hiện "+conflicts.length+" cặp ca bị trùng:</b><ul style=\"margin:8px 0 0;padding-left:20px\">"+conflicts.map(c=>"<li>"+fmt(c.date)+": <b>"+esc(c.a)+"</b> trùng với <b>"+esc(c.b)+"</b></li>").join("")+"</ul>";
+  }
   function render(){
     $("weekLabel").textContent=`${fmt(weekStart)} – ${fmt(addDays(weekStart,6))}/${parseDate(addDays(weekStart,6)).getFullYear()}`;
-    const shifts=weekShifts();$("shiftCount").textContent=shifts.length;$("hourCount").textContent=shifts.reduce((n,s)=>n+hours(s),0).toFixed(1)+"h";$("jobCount").textContent=new Set(shifts.map(s=>s.jobId)).size;
+    updateWeekConflicts();const shifts=weekShifts();$("shiftCount").textContent=shifts.length;$("hourCount").textContent=shifts.reduce((n,s)=>n+hours(s),0).toFixed(1)+"h";$("jobCount").textContent=new Set(shifts.map(s=>s.jobId)).size;
     $("legend").innerHTML=activeJobs().map(j=>`<span class="chip"><i class="dot" style="background:${esc(j.color)}"></i>${esc(j.name)}</span>`).join("");
     $("weekGrid").innerHTML=Array.from({length:7},(_,i)=>{const date=addDays(weekStart,i),d=parseDate(date),list=activeShifts().filter(s=>s.date===date).sort((a,b)=>a.start.localeCompare(b.start));return `<div class="day" data-date="${date}"><div class="dayhead"><span>${dayNames[d.getDay()]}</span><time>${fmt(date)}</time></div>${list.map(s=>{const j=job(s.jobId)||{name:"Công việc đã xóa",color:"#8799b5"};return `<article class="shift" draggable="true" data-id="${s.id}" style="--job:${esc(j.color)}"><button class="x" data-delete="${s.id}" aria-label="Xóa ca">×</button><b>${esc(j.name)}</b><div class="time">${esc(s.start)}–${esc(s.end)}</div>${s.note?`<div class="note">${esc(s.note)}</div>`:""}<button class="edit" data-edit="${s.id}">Sửa</button></article>`}).join("")}</div>`}).join("");
     $("jobList").innerHTML=activeJobs().map(j=>`<div class="jobrow"><div class="jobname"><i class="dot" style="background:${esc(j.color)}"></i><span>${esc(j.name)}</span></div><div class="inline" style="flex:0 0 auto"><input type="color" aria-label="Đổi màu" data-color="${j.id}" value="${esc(j.color)}"><button class="btn small" data-rename="${j.id}">Đổi tên</button><button class="btn small danger" data-removejob="${j.id}">Xóa</button></div></div>`).join("")||'<p class="muted">Chưa có công việc.</p>';
