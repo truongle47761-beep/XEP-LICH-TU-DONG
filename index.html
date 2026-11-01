@@ -375,7 +375,7 @@
     state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất.");
   };
   const previousRender=render;render=function(){previousRender();if($("fixedJobSetup"))renderAutoSetup()};
-\n  render();initAuth();
+  render();initAuth();
   if("serviceWorker" in navigator && location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
 })();
 </script>
