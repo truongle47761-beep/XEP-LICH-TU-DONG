@@ -231,6 +231,102 @@
       .shift:hover{transform:translateY(-1px)}
       .btn:hover,.tabs button:hover{border-color:#8cefff88;box-shadow:0 7px 20px #67e8f51c}
     }
+
+    /* iOS / Apple-inspired light interface */
+    :root{
+      color-scheme:light;
+      --bg:#f4f6fb;--panel:#ffffff;--panel2:#f7f8fc;--line:#e5e8f0;
+      --muted:#7b8497;--text:#202536;--cyan:#2878e8;--purple:#7866d9;
+      --pink:#e58caf;--orange:#c58a35;--radius:22px;
+    }
+    html{background:#f4f6fb;color-scheme:light}
+    body{
+      color:#202536;
+      background:linear-gradient(180deg,#f8f9fc 0%,#eef1f7 100%);
+      background-attachment:fixed;
+    }
+    .app{max-width:1500px;padding-top:24px}
+    .brand h1{
+      color:#202536;background:none;-webkit-text-fill-color:initial;
+      text-shadow:none;letter-spacing:-.035em;font-weight:800
+    }
+    .brand p{color:#81899a}
+    .panel,.modal{
+      color:#202536;background:#ffffff;border:1px solid #e8ebf2;
+      box-shadow:0 8px 30px #26334d0c,0 1px 3px #26334d08;
+      backdrop-filter:none;-webkit-backdrop-filter:none
+    }
+    .tabs{gap:8px;padding:4px 0 16px}
+    .tabs button,.btn{
+      color:#596276;background:#fff;border:1px solid #e7eaf1;
+      border-radius:14px;box-shadow:0 2px 7px #26334d08;
+      backdrop-filter:none;-webkit-backdrop-filter:none
+    }
+    .tabs button.active,.btn.primary{
+      color:#fff;background:#2878e8;border-color:#2878e8;
+      box-shadow:0 5px 14px #2878e82b
+    }
+    .btn.danger{color:#c64b60;background:#fff3f4;border-color:#f4d8dd}
+    .toolbar h2{color:#202536;letter-spacing:-.025em}
+    .muted,.smalltxt{color:#7b8497}
+    .weeknav button,.close{
+      color:#44516a;background:#fff;border:1px solid #e6eaf1;
+      box-shadow:0 2px 8px #26334d0a
+    }
+    .stat{
+      background:#fff;border:1px solid #e8ebf2;
+      box-shadow:0 3px 12px #26334d08;backdrop-filter:none
+    }
+    .stat strong{
+      color:#2878e8;background:none;-webkit-text-fill-color:initial
+    }
+    .stat span{color:#858da0}
+    .chip{color:#586176;background:#fff;border:1px solid #e8ebf2;backdrop-filter:none}
+    #weekView .day{
+      background:#fff;border:1px solid #e8ebf2;border-radius:17px;
+      box-shadow:0 3px 12px #26334d08;backdrop-filter:none
+    }
+    #weekView .dayhead{color:#343d50}
+    #weekView .dayhead time{color:#9299a8}
+    #weekView .day.over{background:#eef6ff;border-color:#7eb4f7;box-shadow:0 0 0 2px #2878e812}
+    #weekView .shift{
+      background:color-mix(in srgb,var(--job,#2878e8) 10%,#fff);
+      border:1px solid color-mix(in srgb,var(--job,#2878e8) 35%,#fff);
+      box-shadow:0 2px 7px #26334d08
+    }
+    #weekView .shift b{color:var(--job,#2878e8)}
+    #weekView .shift .time{color:#293247}
+    #weekView .shift .note{color:#737e92}
+    #weekView .shift .x{background:#fff0f2;color:#c64b60;border:1px solid #f3d6dc}
+    #weekView .shift .edit{color:#46536a;background:#ffffffc9;border:1px solid #e8ebf2}
+    input,select,textarea{
+      color:#252d40;background:#fff;border:1px solid #dfe4ed;
+      box-shadow:inset 0 1px 2px #26334d06
+    }
+    input::placeholder,textarea::placeholder{color:#a2a9b7}
+    input:focus,select:focus,textarea:focus{
+      border-color:#6da7f1;box-shadow:0 0 0 3px #2878e817
+    }
+    .field label{color:#626d82}
+    .jobrow{color:#293247;background:#fff;border:1px solid #e8ebf2;box-shadow:0 2px 8px #26334d06}
+    .jobname{color:#293247}
+    .authbox h2{color:#202536}
+    .status{color:#7b8497}
+    .notice{color:#8c641d;background:#fff8e9;border-color:#f2dfb7}
+    .hint{color:#a87526}
+    .deletezone{color:#c64b60;background:#fff5f6;border-color:#eab8c2}
+    .footer{color:#9aa1af}
+    .modalback{background:#17203366;backdrop-filter:blur(5px)}
+    .modal{border-radius:24px}
+    .close{border-radius:11px}
+    button:focus-visible{outline:3px solid #2878e84a;outline-offset:2px}
+    @media(max-width:700px){
+      .app{padding-top:16px}
+      .panel{box-shadow:0 4px 18px #26334d09}
+      .brand h1{font-size:23px}
+      .tabs button{padding:10px 13px}
+      #weekView .day{box-shadow:0 2px 9px #26334d08}
+    }
   </style>
 </head>
 <body>
