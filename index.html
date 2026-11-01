@@ -118,7 +118,7 @@
     <div class="toolbar"><div><h2>✦ TỰ ĐỘNG XẾP LỊCH</h2><div class="muted smalltxt">Bạn khai báo ca cố định của công ty; ứng dụng chỉ chọn ngày, không đổi giờ ca.</div></div></div>
     <div class="notice">Mỗi công việc cần có mục tiêu giờ/tuần, các khung ca cố định và ngày OFF. Ứng dụng sẽ chọn ca phù hợp trong các ngày còn lại, kiểm tra trùng ca và thời gian nghỉ.</div>
     <div id="fixedJobSetup"></div>
-    <div class="grid2"><div class="field"><label for="autoRest">Nghỉ tối thiểu giữa hai ca (giờ)</label><input id="autoRest" type="number" min="0" max="24" step=".5" value="8"></div><div class="field"><label for="autoDailyMax">Số ca tối đa mỗi ngày (tất cả công việc)</label><input id="autoDailyMax" type="number" min="1" max="5" step="1" value="2"></div></div>
+    <div class="grid2"><div class="field"><label for="autoRest">Nghỉ tối thiểu giữa hai ca (giờ)</label><input id="autoRest" type="number" min="0" max="24" step=".5" value="8"></div><div class="field"><label for="autoDailyMax">Số ca tối đa mỗi ngày (tất cả công việc)</label><input id="autoDailyMax" type="number" min="1" max="5" step="1" value="2"></div></div><div class="field" style="margin-top:12px"><label for="autoMode">Cách xếp các công việc trong ngày</label><select id="autoMode"><option value="alternate">Xen kẽ công việc A/B trong ngày (mỗi công việc tối đa 1 ca/ngày)</option><option value="target">Xếp theo mục tiêu giờ (mỗi công việc tối đa 1 ca/ngày)</option></select><div class="smalltxt muted">Giờ bắt đầu và kết thúc của từng ca luôn được giữ nguyên theo khung ca bạn đã nhập.</div></div>
     <div class="form-actions"><button class="btn primary" id="runAuto">✦ Tạo lịch tự động</button><button class="btn" id="clearAuto">Xóa đề xuất</button></div>
     <div id="autoResult" class="status" style="margin:14px 0"></div><div id="autoPreview"></div>
     <div class="form-actions" style="margin-top:14px"><button class="btn primary" id="applyAuto" hidden>Áp dụng lịch đề xuất</button></div>
@@ -267,7 +267,7 @@
       '<div class="smalltxt muted">Các ca cố định công ty có thể phân cho bạn</div><div data-slots="'+j.id+'">'+c.shifts.map((x,i)=>'<div class="inline" style="margin:8px 0"><input aria-label="Giờ bắt đầu" type="time" data-slot-start="'+j.id+'" data-index="'+i+'" value="'+esc(x.start)+'"><input aria-label="Giờ kết thúc" type="time" data-slot-end="'+j.id+'" data-index="'+i+'" value="'+esc(x.end)+'"><button class="btn small danger" data-slot-remove="'+j.id+'" data-index="'+i+'">Xóa</button></div>').join("")+'</div><button class="btn small" data-slot-add="'+j.id+'">＋ Thêm khung ca</button>'+
       '<div class="smalltxt muted" style="margin-top:12px">Ngày OFF cố định tại công ty này</div><div class="inline" style="flex-wrap:wrap;margin-top:8px">'+weekDays.map(([n,d])=>'<label class="chip"><input type="checkbox" data-off="'+j.id+'" value="'+d+'" '+(c.offDays.includes(d)?'checked':'')+' style="width:auto">'+n+'</label>').join("")+'</div></div>';
     }).join("")||'<p class="muted">Hãy tạo công việc trong mục Cài đặt trước.</p>';
-    $("autoRest").value=state.settings.restHours;
+    $("autoRest").value=state.settings.restHours;$("autoMode").value=state.settings.autoMode||"alternate";
   }
   function saveAutoConfigFromUI(){
     ensureAutoConfig();
@@ -276,7 +276,7 @@
       c.shifts=[...document.querySelectorAll('[data-slot-start="'+j.id+'"]')].map((el,i)=>({start:el.value,end:document.querySelector('[data-slot-end="'+j.id+'"][data-index="'+i+'"]')?.value||""}));
       c.offDays=[...document.querySelectorAll('[data-off="'+j.id+'"]:checked')].map(x=>Number(x.value));
     });
-    state.settings.restHours=Math.max(0,Number($("autoRest").value)||0);queueSave();
+    state.settings.restHours=Math.max(0,Number($("autoRest").value)||0);state.settings.autoMode=$("autoMode").value||"alternate";queueSave();
   }
   function buildAutoSchedule(){
     saveAutoConfigFromUI();
@@ -287,11 +287,11 @@
     jobs.forEach(g=>{for(let d=0;d<7;d++){const dow=parseDate(addDays(week,d)).getDay();if(g.job.autoConfig.offDays.includes(dow))continue;g.shifts.forEach((slot,k)=>candidates.push({job:g,day:d,date:addDays(week,d),start:slot.start,end:slot.end,len:(toMin(slot.end)-toMin(slot.start))/60,slot:k}));}});
     candidates.sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start));
     let chosen=[],used=new Set(),perDay={};
-    // Chọn ca nguyên vẹn; ưu tiên công việc đang thiếu nhiều giờ tương đối và xen kẽ ngày.
+    // Chọn ca nguyên vẹn; không bao giờ xếp hai ca cùng một công việc trong một ngày. Ở chế độ xen kẽ, ca thứ hai trong ngày phải thuộc công việc khác (A/B).
     for(let pass=0;pass<3;pass++){
       let progress=false;
       for(const day of [...new Set(candidates.map(x=>x.day))]){
-        const options=candidates.filter(x=>x.day===day&&!used.has(x.job.job.id+"|"+x.day+"|"+x.slot)&&x.job.done+0.001<x.job.target).sort((a,b)=>(b.job.target-b.job.done)/b.job.target-(a.job.target-a.job.done)/a.job.target);
+        const dayChosen=chosen.filter(x=>{const d=Math.round((parseDate(x.date)-parseDate(week))/86400000);return d===day});\n         const options=candidates.filter(x=>x.day===day&&!used.has(x.job.job.id+"|"+x.day+"|"+x.slot)&&!dayChosen.some(y=>y.jobId===x.job.job.id)&&x.job.done+0.001<x.job.target).sort((a,b)=>{const mode=$("autoMode").value||"alternate";if(mode==="alternate"&&dayChosen.length){const aNew=!dayChosen.some(y=>y.jobId===a.job.job.id),bNew=!dayChosen.some(y=>y.jobId===b.job.job.id);if(aNew!==bNew)return aNew?-1:1}return (b.job.target-b.job.done)/b.job.target-(a.job.target-a.job.done)/a.job.target});
         for(const c of options){
           if((perDay[day]||0)>=dailyMax)break;
           if(c.job.done+c.len>c.job.target+0.001)continue;
