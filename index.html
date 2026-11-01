@@ -96,6 +96,141 @@
       #weekView .stat span{font-size:11px}
       #weekView .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
+
+    /* Glassmorphism refresh — giữ nguyên toàn bộ cấu trúc và xử lý chức năng */
+    :root{
+      --bg:#080d1b;--panel:#111a30cc;--panel2:#192744cc;--line:#8ba9d52b;
+      --muted:#a8b8d2;--text:#f2f6ff;--cyan:#67e8f9;--purple:#b9a0ff;
+      --pink:#ff9fc7;--orange:#ffd08a;--radius:22px;
+    }
+    html{background:#080d1b;color-scheme:dark}
+    body{
+      background:
+        radial-gradient(ellipse at 8% 4%,#3d6fba42 0,transparent 34%),
+        radial-gradient(ellipse at 92% 12%,#9362dc38 0,transparent 32%),
+        radial-gradient(ellipse at 55% 100%,#247d9b24 0,transparent 40%),
+        linear-gradient(135deg,#080d1b 0%,#0d1428 52%,#111329 100%);
+      background-attachment:fixed;color:var(--text)
+    }
+    .app{max-width:1580px;padding-top:26px}
+    .brand h1{
+      background:linear-gradient(100deg,#8beeff 0%,#b9a0ff 58%,#ffc0db 100%);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+      text-shadow:0 8px 34px #79caff20
+    }
+    .brand p{color:#aab9d4}
+    .panel,.modal{
+      background:linear-gradient(145deg,#172440c9,#10182dcc);
+      border:1px solid #b8d2ff24;
+      box-shadow:0 18px 55px #02061166,inset 0 1px 0 #ffffff0b;
+      backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)
+    }
+    .tabs{gap:8px;padding-bottom:16px}
+    .tabs button,.btn{
+      background:linear-gradient(145deg,#263653a8,#17243bb8);
+      border:1px solid #a9c7f32b;color:#d0dcf0;
+      box-shadow:inset 0 1px 0 #ffffff0a;
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
+    }
+    .tabs button.active,.btn.primary{
+      color:#baf5ff;border-color:#70e8f4a6;
+      background:linear-gradient(120deg,#1b6174a8,#51417ca8);
+      box-shadow:0 0 24px #61d9f52a,inset 0 1px 0 #ffffff22
+    }
+    .btn.danger{background:#692d4b70;border-color:#ff91b65c;color:#ffc0d5}
+    .weeknav button,.close{
+      background:linear-gradient(145deg,#263b5cbd,#192642bd);
+      border:1px solid #b6d0f13b;border-radius:14px;
+      box-shadow:inset 0 1px 0 #ffffff12
+    }
+    .stat{
+      background:linear-gradient(145deg,#263c60a1,#17243bbd);
+      border:1px solid #a9c9f333;backdrop-filter:blur(14px);
+      box-shadow:inset 0 1px 0 #ffffff12,0 8px 22px #03081724
+    }
+    .stat strong{
+      background:linear-gradient(100deg,#8cefff,#c3aaff);
+      -webkit-background-clip:text;background-clip:text;color:transparent
+    }
+    .chip{
+      background:#293b5b80;border:1px solid #b6d2f32b;
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
+    }
+    #weekView .week{
+      grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;
+      overflow:visible;scroll-snap-type:none
+    }
+    #weekView .day{
+      min-width:0;min-height:205px;padding:11px;border-radius:17px;
+      background:linear-gradient(155deg,#263b5a9c,#141f36b8);
+      border:1px solid #b6d1f12c;
+      box-shadow:inset 0 1px 0 #ffffff0b,0 8px 20px #03081724;
+      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)
+    }
+    #weekView .dayhead{font-size:13px;margin-bottom:10px}
+    #weekView .dayhead time{color:#b4c4df}
+    #weekView .day.over{
+      border-color:#70e8f4;background:#24506b9c;
+      box-shadow:0 0 0 2px #70e8f42a,0 0 25px #70e8f42b
+    }
+    #weekView .shift{
+      background:linear-gradient(145deg,color-mix(in srgb,var(--job,#67e8f9) 21%,#1a2943),#18233acc);
+      border:1px solid color-mix(in srgb,var(--job,#67e8f9) 75%,#ffffff33);
+      border-radius:12px;padding:10px 8px;margin:7px 0;
+      box-shadow:0 5px 14px #0308172b,inset 0 1px 0 #ffffff12
+    }
+    #weekView .shift b{font-size:12px;line-height:1.35;margin-bottom:7px}
+    #weekView .shift .time{font-size:13px;color:#f4f7ff}
+    #weekView .shift .note{font-size:10px;color:#bdcbe0}
+    #weekView .shift .x{background:#7e365b;color:#ffe0eb;border:1px solid #ffc0d544}
+    #weekView .shift .edit{background:#ffffff18;border:1px solid #ffffff18;color:#eaf3ff}
+    input,select,textarea{
+      background:#111d34d9;border:1px solid #a9c7f333;color:#f2f6ff;
+      box-shadow:inset 0 1px 0 #ffffff08
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:#79e9f5;box-shadow:0 0 0 3px #67e8f927
+    }
+    .jobrow{
+      background:linear-gradient(145deg,#263b5a91,#17243bbd);
+      border:1px solid #a9c7f32b;backdrop-filter:blur(12px)
+    }
+    .notice{background:#59432162;border-color:#f5c47766;color:#ffe0aa;backdrop-filter:blur(10px)}
+    .status.good{color:#91f0c7}.status.bad{color:#ffabc4}
+    .deletezone{background:#632d4866;border-color:#ff91b66b;color:#ffc1d5}
+    .modalback{background:#030713bd;backdrop-filter:blur(9px)}
+    .modal{background:linear-gradient(145deg,#1a2946f5,#10182df5)}
+    @media(max-width:900px){
+      .app{padding-left:16px;padding-right:16px}
+      #weekView .week{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    }
+    @media(max-width:700px){
+      .app{padding:16px 12px 34px}
+      header{align-items:flex-start}
+      .panel{padding:13px;border-radius:18px}
+      .tabs{margin-right:-12px;padding-right:12px}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .stat{padding:12px;border-radius:15px}
+      .stat strong{font-size:22px}
+      #weekView .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      #weekView .week{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      #weekView .day{min-height:175px;padding:11px;border-radius:15px}
+      #weekView .dayhead{font-size:13px;margin-bottom:10px}
+      #weekView .dayhead time{font-size:11px}
+      #weekView .shift{padding:11px 9px;margin:7px 0}
+      #weekView .shift b{font-size:13px;line-height:1.35}
+      #weekView .shift .time{font-size:14px}
+      #weekView .shift .note{font-size:11px;-webkit-line-clamp:3}
+      #weekView .shift .x{width:23px;height:23px;font-size:17px}
+      #weekView .shift .edit{font-size:10px;padding:4px 6px}
+      .modalback{align-items:flex-end;padding:0}
+      .modal{border-radius:22px 22px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+    }
+    @media(prefers-reduced-motion:no-preference){
+      .panel,.stat,.day,.shift,.btn,.tabs button{transition:background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+      .shift:hover{transform:translateY(-1px)}
+      .btn:hover,.tabs button:hover{border-color:#8cefff88;box-shadow:0 7px 20px #67e8f51c}
+    }
   </style>
 </head>
 <body>
