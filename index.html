@@ -315,38 +315,48 @@
   function toMin(t){const [h,m]=t.split(":").map(Number);return h*60+m}
   // Bộ xử lý tương tác tập trung cho mục Tự động xếp (hỗ trợ Safari/iPhone).
   // Chặn handler cũ để mỗi lần chạm chỉ chạy đúng một thao tác.
-  $("autoView").addEventListener("click",e=>{
-    const button=e.target.closest("button");
-    if(!button || ! $("autoView").contains(button)) return;
+  // Bắt thao tác ở document capture để không phụ thuộc cấu trúc DOM/Safari.
+  document.addEventListener("click",e=>{
+    const el=e.target;
+    if(!el || !el.closest) return;
+    const button=el.closest("#autoView button");
+    if(!button) return;
     const add=button.closest("[data-slot-add]"), remove=button.closest("[data-slot-remove]");
     const isRun=button.id==="runAuto", isClear=button.id==="clearAuto", isApply=button.id==="applyAuto";
     if(!add&&!remove&&!isRun&&!isClear&&!isApply) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    if(add){
-      saveAutoConfigFromUI();
-      const j=job(add.dataset.slotAdd);
-      if(j){j.autoConfig.shifts.push({start:"08:00",end:"16:00"});renderAutoSetup();queueSave()}
-      return;
-    }
-    if(remove){
-      saveAutoConfigFromUI();
-      const j=job(remove.dataset.slotRemove);
-      if(j){j.autoConfig.shifts.splice(Number(remove.dataset.index),1);renderAutoSetup();queueSave()}
-      return;
-    }
-    if(isRun){buildAutoSchedule();return}
-    if(isClear){
-      autoProposal=[];$("autoPreview").innerHTML="";$("autoResult").textContent="Đã xóa lịch đề xuất.";
-      $("autoResult").className="status";$("applyAuto").hidden=true;return;
-    }
-    if(isApply){
-      if(!autoProposal.length)return;
-      if(!confirm("Áp dụng lịch tự động cho tuần "+fmt(monday(weekStart))+"? Các ca hiện có trong tuần sẽ được thay thế."))return;
-      const start=monday(weekStart),end=addDays(start,7);
-      state.shifts=state.shifts.filter(x=>x.date<start||x.date>=end||x.deletedAt);
-      state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");
-      autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất.");
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    try {
+      if(add){
+        saveAutoConfigFromUI();
+        const j=job(add.dataset.slotAdd);
+        if(j){j.autoConfig.shifts.push({start:"08:00",end:"16:00"});renderAutoSetup();queueSave()}
+        $("autoResult").textContent="Đã thêm khung ca.";
+        return;
+      }
+      if(remove){
+        saveAutoConfigFromUI();
+        const j=job(remove.dataset.slotRemove);
+        if(j){j.autoConfig.shifts.splice(Number(remove.dataset.index),1);renderAutoSetup();queueSave()}
+        $("autoResult").textContent="Đã xóa khung ca.";
+        return;
+      }
+      if(isRun){buildAutoSchedule();return}
+      if(isClear){
+        autoProposal=[];$("autoPreview").innerHTML="";$("autoResult").textContent="Đã xóa lịch đề xuất.";
+        $("autoResult").className="status";$("applyAuto").hidden=true;return;
+      }
+      if(isApply){
+        if(!autoProposal.length){$("autoResult").textContent="Chưa có lịch đề xuất để áp dụng.";return}
+        if(!confirm("Áp dụng lịch tự động cho tuần "+fmt(monday(weekStart))+"? Các ca hiện có trong tuần sẽ được thay thế."))return;
+        const start=monday(weekStart),end=addDays(start,7);
+        state.shifts=state.shifts.filter(x=>x.date<start||x.date>=end||x.deletedAt);
+        state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");
+        autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất.");
+      }
+    } catch(err) {
+      console.error("Lỗi mục tự động xếp:",err);
+      $("autoResult").textContent="Có lỗi khi xử lý: "+(err?.message||String(err));
+      $("autoResult").className="status bad";
     }
   },true);
   $("fixedJobSetup").addEventListener("click",e=>{
