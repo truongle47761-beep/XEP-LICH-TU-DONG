@@ -285,7 +285,7 @@
         if(others>0&&len>3)len=Math.max(3,Math.min(len,Math.ceil((g.goal-g.done)/(days.filter(x=>x.on).length||1))));
         len=Math.min(len,room,g.goal-g.done);if(len<0.5)break;
         const start=fromMin(cursor),finish=fromMin(cursor+Math.round(len*60));
-        proposed.push({id:uid(),jobId:g.job.id,date:addDays(monday(todayISO()),d.i===0?6:d.i-1),start,end:finish,note:"Tự động xếp · đề xuất"});
+        proposed.push({id:uid(),jobId:g.job.id,date:addDays(monday(todayISO()),d.i),start,end:finish,note:"Tự động xếp · đề xuất"});
         g.done+=len;cursor+=Math.round(len*60)+Math.round(rest*60);count++;
       }
     }
@@ -301,7 +301,7 @@
   function fromMin(n){return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
   $("runAuto").onclick=buildAutoSchedule;
   $("clearAuto").onclick=()=>{autoProposal=[];$("autoPreview").innerHTML="";$("autoResult").textContent="Đã xóa lịch đề xuất.";$("applyAuto").hidden=true};
-  $("applyAuto").onclick=()=>{if(!autoProposal.length)return;const start=monday(todayISO()),end=addDays(start,7);state.shifts=state.shifts.filter(x=>x.date<start||x.date>=end||x.deletedAt);state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất vào tuần hiện tại.")};
+  $("applyAuto").onclick=()=>{if(!autoProposal.length)return;const start=monday(todayISO()),end=addDays(start,7);if(!confirm("Áp dụng lịch tự động cho tuần này? Các ca hiện có trong tuần sẽ được thay thế."))return;state.shifts=state.shifts.filter(x=>x.date<start||x.date>=end||x.deletedAt);state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất vào tuần hiện tại.")};
   $("autoGoals").addEventListener("change",e=>{const el=e.target.closest("[data-goal]");if(el){const j=job(el.dataset.goal);if(j){j.weeklyTarget=Number(el.value)||0;queueSave()}}});
   const oldRender=render;render=function(){oldRender();if($("autoGoals"))renderAutoSetup()};
 \n  render();initAuth();
