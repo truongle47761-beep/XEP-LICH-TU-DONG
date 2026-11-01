@@ -370,7 +370,17 @@
   function loadLocal(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||defaultState()}catch{return defaultState()}}
   function persistLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
   function configured(){return window.supabase && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && SUPABASE_ANON_KEY.length>20 && !SUPABASE_ANON_KEY.includes("YOUR_")}
-  if(configured()) supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  // Safari/iOS đôi khi trả về TypeError: Load failed khi kết nối mạng chập chờn.
+  // Thử lại các yêu cầu mạng thất bại tạm thời trước khi báo lỗi cho người dùng.
+  async function fetchWithRetry(input,init){
+    let lastError;
+    for(let attempt=0;attempt<3;attempt++){
+      try{return await window.fetch(input,init)}
+      catch(error){lastError=error;if(attempt<2)await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)))}
+    }
+    throw lastError;
+  }
+  if(configured()) supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true},global:{fetch:fetchWithRetry}});
   function job(id){return state.jobs.find(j=>j.id===id&&!j.deletedAt)}
   function activeJobs(){return state.jobs.filter(j=>!j.deletedAt)}
   function activeShifts(){return state.shifts.filter(s=>!s.deletedAt)}
