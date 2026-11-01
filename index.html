@@ -71,7 +71,7 @@
 
   <nav class="tabs" aria-label="Điều hướng">
     <button class="active" data-view="weekView">Lịch tuần</button>
-    <button id="addShiftTop">＋ Thêm ca</button>
+    <button id="addShiftTop">＋ Thêm ca</button><button data-view="autoView">✦ Tự động xếp</button>
     <button data-view="settingsView">Cài đặt</button>
     <button data-view="exportView">Xuất lịch</button>
     <button data-view="helpView">Hướng dẫn</button>
@@ -113,7 +113,22 @@
     <div id="jobList" style="margin-top:12px"></div>
   </section>
 
-  <section id="exportView" class="view panel">
+
+  <section id="autoView" class="view panel">
+    <div class="toolbar"><div><h2>✦ TỰ ĐỘNG XẾP LỊCH</h2><div class="muted smalltxt">Phân bổ xen kẽ, thời lượng ca linh hoạt, ưu tiên đủ giờ từng công việc</div></div></div>
+    <div class="notice">Nhập mục tiêu giờ cho từng công việc và khung giờ bạn có thể làm. Bộ xếp lịch sẽ tạo lịch đề xuất; lịch cũ không bị ghi đè cho đến khi bạn chọn áp dụng.</div>
+    <h3>Mục tiêu theo công việc</h3><div id="autoGoals"></div>
+    <h3>Thời gian có thể làm trong tuần</h3><div class="muted smalltxt">Bỏ chọn ngày nghỉ. Giờ kết thúc phải sau giờ bắt đầu.</div>
+    <div id="autoAvailability" class="grid2" style="margin-top:12px"></div>
+    <div class="grid2">
+      <div class="field"><label for="autoRest">Nghỉ tối thiểu giữa hai ca (giờ)</label><input id="autoRest" type="number" min="0" max="24" step=".5" value="8"></div>
+      <div class="field"><label for="autoMaxShift">Độ dài tối đa mỗi ca (giờ)</label><input id="autoMaxShift" type="number" min="2" max="12" step=".5" value="8"></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="runAuto">✦ Tạo lịch tự động</button><button class="btn" id="clearAuto">Xóa đề xuất</button></div>
+    <div id="autoResult" class="status" style="margin:14px 0"></div><div id="autoPreview"></div>
+    <div class="form-actions" style="margin-top:14px"><button class="btn primary" id="applyAuto" hidden>Áp dụng lịch đề xuất</button></div>
+  </section>
+\n  <section id="exportView" class="view panel">
     <h2>XUẤT LỊCH</h2>
     <div class="grid2">
       <div class="field"><label for="exportWeek">Tuần cần xuất</label><input id="exportWeek" type="date"></div>
@@ -241,7 +256,55 @@
   $("checkRules").onclick=checkRules;$("makeExport").onclick=makeExport;$("copyExport").onclick=async()=>{if(!$("exportText").value)makeExport();try{await navigator.clipboard.writeText($("exportText").value);$("copyStatus").textContent="Đã sao chép lịch."; }catch{$("exportText").select();document.execCommand("copy");$("copyStatus").textContent="Đã sao chép lịch."}};
   $("exportWeek").value=weekStart;$("authToggle").onclick=()=>showView("authView");$("signIn").onclick=()=>authAction("in");$("signUp").onclick=()=>authAction("up");
   $("logoutBtn").onclick=async()=>{if(supabase)await supabase.auth.signOut();user=null;updateAuthUI()};
-  render();initAuth();
+
+  // Bộ xếp lịch tự động: cân bằng theo tỷ lệ mục tiêu, ca linh hoạt.
+  let autoProposal=[];
+  const autoDays=[["T2",1],["T3",2],["T4",3],["T5",4],["T6",5],["T7",6],["CN",0]];
+  function renderAutoSetup(){
+    $("autoGoals").innerHTML=activeJobs().map(j=>'<div class="jobrow"><span class="jobname"><i class="dot" style="background:'+esc(j.color)+'"></i>'+esc(j.name)+'</span><label class="smalltxt">Giờ/tuần <input data-goal="'+j.id+'" type="number" min="0" max="168" step=".5" value="'+(Number(j.weeklyTarget)||0)+'" style="width:100px;margin-left:6px"></label></div>').join("")||'<p class="muted">Tạo công việc trước trong Cài đặt.</p>';
+    $("autoAvailability").innerHTML=autoDays.map(([name],i)=>'<div class="jobrow" style="display:block"><label><input type="checkbox" data-av-on="'+i+'" '+(i===6?'':'checked')+' style="width:auto;margin-right:8px">'+name+'</label><div class="inline" style="margin-top:8px"><input aria-label="Bắt đầu '+name+'" data-av-start="'+i+'" type="time" value="08:00"><input aria-label="Kết thúc '+name+'" data-av-end="'+i+'" type="time" value="22:00"></div></div>').join("");
+    $("autoRest").value=state.settings.restHours;
+  }
+  function buildAutoSchedule(){
+    const goals=activeJobs().map(j=>({job:j,goal:Math.max(0,Number(document.querySelector('[data-goal="'+j.id+'"]')?.value)||0),done:0}));
+    const total=goals.reduce((a,g)=>a+g.goal,0), maxShift=Math.max(2,Math.min(12,Number($("autoMaxShift").value)||8)), rest=Math.max(0,Number($("autoRest").value)||0);
+    if(!goals.length||!total){$("autoResult").textContent="Hãy tạo công việc và nhập mục tiêu giờ lớn hơn 0.";return}
+    const days=autoDays.map(([name],i)=>{const on=document.querySelector('[data-av-on="'+i+'"]')?.checked;const st=document.querySelector('[data-av-start="'+i+'"]')?.value||"08:00",en=document.querySelector('[data-av-end="'+i+'"]')?.value||"22:00";return {i,name,on,start:st,end:en}});
+    let proposed=[],issues=[],capacity=0;
+    days.forEach(d=>{if(d.on&&d.end>d.start)capacity+=(toMin(d.end)-toMin(d.start))/60});
+    if(capacity<total){issues.push("Tổng thời gian có thể làm chỉ "+capacity+" giờ, thấp hơn mục tiêu "+total+" giờ. Thiếu ít nhất "+(total-capacity).toFixed(1)+" giờ.");}
+    for(const d of days){
+      if(!d.on||d.end<=d.start)continue;
+      let cursor=toMin(d.start),end=toMin(d.end),count=0;
+      while(cursor<end&&goals.some(g=>g.done+0.001<g.goal)&&count<goals.length){
+        const remaining=goals.filter(g=>g.done+0.001<g.goal).sort((a,b)=>(a.done/a.goal)-(b.done/b.goal));
+        const g=remaining[0];if(!g)break;
+        const room=(end-cursor)/60;if(room<1)break;
+        const others=goals.filter(x=>x!==g&&x.done+0.001<x.goal).length;
+        let len=Math.min(maxShift,room,g.goal-g.done);
+        if(others>0&&len>3)len=Math.max(3,Math.min(len,Math.ceil((g.goal-g.done)/(days.filter(x=>x.on).length||1))));
+        len=Math.min(len,room,g.goal-g.done);if(len<0.5)break;
+        const start=fromMin(cursor),finish=fromMin(cursor+Math.round(len*60));
+        proposed.push({id:uid(),jobId:g.job.id,date:addDays(monday(todayISO()),d.i===0?6:d.i-1),start,end:finish,note:"Tự động xếp · đề xuất"});
+        g.done+=len;cursor+=Math.round(len*60)+Math.round(rest*60);count++;
+      }
+    }
+    const missing=goals.filter(g=>g.done+0.01<g.goal);
+    missing.forEach(g=>issues.push(g.job.name+": còn thiếu "+(g.goal-g.done).toFixed(1)+" giờ."));
+    autoProposal=proposed;
+    $("autoResult").textContent=(issues.length?"Chưa thể đáp ứng toàn bộ mục tiêu. "+issues.join(" "):"Đã tạo lịch đề xuất đủ mục tiêu cho tất cả công việc.")+" Tổng đã xếp: "+proposed.reduce((a,x)=>a+(toMin(x.end)-toMin(x.start))/60,0).toFixed(1)+" giờ.";
+    $("autoResult").className="status "+(issues.length?"bad":"good");
+    $("autoPreview").innerHTML=proposed.length?'<div class="notice">Lịch đề xuất bắt đầu từ tuần hiện tại ('+fmt(monday(todayISO()))+'). Kiểm tra trước khi áp dụng.</div>'+proposed.map(x=>'<div class="jobrow"><b>'+esc(job(x.jobId)?.name||"Công việc")+'</b><span>'+fmt(x.date)+' · '+x.start+'–'+x.end+'</span></div>').join(""):'<p class="muted">Chưa tạo được ca phù hợp.</p>';
+    $("applyAuto").hidden=!proposed.length;
+  }
+  function toMin(t){const [h,m]=t.split(":").map(Number);return h*60+m}
+  function fromMin(n){return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
+  $("runAuto").onclick=buildAutoSchedule;
+  $("clearAuto").onclick=()=>{autoProposal=[];$("autoPreview").innerHTML="";$("autoResult").textContent="Đã xóa lịch đề xuất.";$("applyAuto").hidden=true};
+  $("applyAuto").onclick=()=>{if(!autoProposal.length)return;const start=monday(todayISO()),end=addDays(start,7);state.shifts=state.shifts.filter(x=>x.date<start||x.date>=end||x.deletedAt);state.shifts.push(...autoProposal);weekStart=start;render();queueSave();showView("weekView");autoProposal=[];$("applyAuto").hidden=true;alert("Đã áp dụng lịch đề xuất vào tuần hiện tại.")};
+  $("autoGoals").addEventListener("change",e=>{const el=e.target.closest("[data-goal]");if(el){const j=job(el.dataset.goal);if(j){j.weeklyTarget=Number(el.value)||0;queueSave()}}});
+  const oldRender=render;render=function(){oldRender();if($("autoGoals"))renderAutoSetup()};
+\n  render();initAuth();
   if("serviceWorker" in navigator && location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
 })();
 </script>
