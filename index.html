@@ -29,7 +29,7 @@
     .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:5px 0 16px}
     .toolbar h2{font-size:20px;margin:0 0 5px}.muted{color:var(--muted)}.smalltxt{font-size:13px}
     .weeknav{display:flex;gap:8px}.weeknav button{width:44px;height:44px;border:1px solid #2a4966;background:#13283b;border-radius:14px;font-size:20px}
-    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
     .stat{border:1px solid var(--line);border-radius:17px;padding:16px;background:#0c1727}.stat strong{display:block;font-size:27px;color:#5be5f8;margin-bottom:7px}.stat span{font-size:13px;color:var(--muted)}
     .legend{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 18px}.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#111d30;border-radius:30px;padding:9px 13px;font-size:13px}
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -94,6 +94,7 @@
       #weekView .stat{padding:10px 8px}
       #weekView .stat strong{font-size:20px}
       #weekView .stat span{font-size:11px}
+      #weekView .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
   </style>
 </head>
@@ -121,6 +122,7 @@
       <div class="stat"><strong id="shiftCount">0</strong><span>Tổng ca</span></div>
       <div class="stat"><strong id="hourCount">0.0h</strong><span>Tổng giờ</span></div>
       <div class="stat"><strong id="jobCount">0</strong><span>Công việc</span></div>
+      <div class="stat"><strong id="payCount">0 ₫</strong><span>Lương dự kiến</span></div>
     </div>
     <div id="weekConflict" class="status" style="margin:12px 0"></div>
     <div class="legend" id="legend"></div>
@@ -239,6 +241,7 @@
   function activeShifts(){return state.shifts.filter(s=>!s.deletedAt)}
   function duration(s){let [a,b]=[s.start,s.end].map(t=>{let [h,m]=t.split(":").map(Number);return h*60+m});if(b<=a)b+=1440;return b-a}
   function hours(s){return duration(s)/60}
+  function money(v){return new Intl.NumberFormat("vi-VN",{maximumFractionDigits:0}).format(Math.round(Number(v)||0))+" ₫"}
   function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
   function weekShifts(){const end=addDays(weekStart,7);return state.shifts.filter(s=>s.date>=weekStart&&s.date<end)}
   function updateWeekConflicts(){
@@ -251,10 +254,10 @@
   }
   function render(){
     $("weekLabel").textContent=`${fmt(weekStart)} – ${fmt(addDays(weekStart,6))}/${parseDate(addDays(weekStart,6)).getFullYear()}`;
-    updateWeekConflicts();const shifts=weekShifts();$("shiftCount").textContent=shifts.length;$("hourCount").textContent=shifts.reduce((n,s)=>n+hours(s),0).toFixed(1)+"h";$("jobCount").textContent=new Set(shifts.map(s=>s.jobId)).size;
+    updateWeekConflicts();const shifts=weekShifts().filter(s=>!s.deletedAt);$("shiftCount").textContent=shifts.length;$("hourCount").textContent=shifts.reduce((n,s)=>n+hours(s),0).toFixed(1)+"h";$("jobCount").textContent=new Set(shifts.map(s=>s.jobId)).size;$("payCount").textContent=money(shifts.reduce((n,s)=>n+hours(s)*(Number(job(s.jobId)?.hourlyRate)||0),0));
     $("legend").innerHTML=activeJobs().map(j=>`<span class="chip"><i class="dot" style="background:${esc(j.color)}"></i>${esc(j.name)}</span>`).join("");
     $("weekGrid").innerHTML=Array.from({length:7},(_,i)=>{const date=addDays(weekStart,i),d=parseDate(date),list=activeShifts().filter(s=>s.date===date).sort((a,b)=>a.start.localeCompare(b.start));return `<div class="day" data-date="${date}"><div class="dayhead"><span>${dayNames[d.getDay()]}</span><time>${fmt(date)}</time></div>${list.map(s=>{const j=job(s.jobId)||{name:"Công việc đã xóa",color:"#8799b5"};return `<article class="shift" draggable="true" data-id="${s.id}" style="--job:${esc(j.color)}"><button class="x" data-delete="${s.id}" aria-label="Xóa ca">×</button><b>${esc(j.name)}</b><div class="time">${esc(s.start)}–${esc(s.end)}</div>${s.note?`<div class="note">${esc(s.note)}</div>`:""}<button class="edit" data-edit="${s.id}">Sửa</button></article>`}).join("")}</div>`}).join("");
-    $("jobList").innerHTML=activeJobs().map(j=>`<div class="jobrow"><div class="jobname"><i class="dot" style="background:${esc(j.color)}"></i><span>${esc(j.name)}</span></div><div class="inline" style="flex:0 0 auto"><input type="color" aria-label="Đổi màu" data-color="${j.id}" value="${esc(j.color)}"><button class="btn small" data-rename="${j.id}">Đổi tên</button><button class="btn small danger" data-removejob="${j.id}">Xóa</button></div></div>`).join("")||'<p class="muted">Chưa có công việc.</p>';
+    $("jobList").innerHTML=activeJobs().map(j=>`<div class="jobrow"><div class="jobname"><i class="dot" style="background:${esc(j.color)}"></i><div><span>${esc(j.name)}</span><div class="muted smalltxt">Mức lương: ${Number(j.hourlyRate)>0?money(j.hourlyRate)+"/giờ":"Chưa thiết lập"}</div></div></div><div class="inline" style="flex:0 0 auto;flex-wrap:wrap"><input type="color" aria-label="Đổi màu" data-color="${j.id}" value="${esc(j.color)}"><button class="btn small" data-wage="${j.id}">Mức lương</button><button class="btn small" data-rename="${j.id}">Đổi tên</button><button class="btn small danger" data-removejob="${j.id}">Xóa</button></div></div>`).join("")||'<p class="muted">Chưa có công việc.</p>';
     const opts=activeJobs().map(j=>`<option value="${j.id}">${esc(j.name)}</option>`).join("");$("shiftJob").innerHTML=opts;$("exportJob").innerHTML='<option value="all">Tất cả công việc</option>'+opts;
     $("restHours").value=state.settings.restHours;$("weeklyGoal").value=state.settings.weeklyGoal;$("dailyLimit").value=state.settings.dailyLimit;
     persistLocal();
@@ -290,7 +293,7 @@
   $("weekGrid").addEventListener("pointermove",e=>{if(!touch)return;if(Math.abs(e.clientX-touch.x)+Math.abs(e.clientY-touch.y)>18&&!touch.started){clearTimeout(touch.timer);touch=null}});
   document.addEventListener("pointerup",e=>{if(!touch)return;clearTimeout(touch.timer);if(touch.started){const target=document.elementFromPoint(e.clientX,e.clientY),day=target?.closest(".day"),del=target?.closest("#deleteZone"),s=activeShifts().find(x=>x.id===touch.id);if(s&&day){s.date=day.dataset.date;s.updatedAt=new Date().toISOString();render();queueSave()}else if(s&&del)removeShift(s.id);touch.el.classList.remove("dragging")}touch=null});
   $("addJob").onclick=()=>{const name=$("newJobName").value.trim();if(!name)return;if(activeJobs().some(j=>j.name.toLowerCase()===name.toLowerCase())){alert("Tên công việc đã tồn tại.");return}state.jobs.push({id:uid(),name,color:$("newJobColor").value});$("newJobName").value="";render();queueSave()};
-  $("jobList").addEventListener("click",e=>{const rename=e.target.closest("[data-rename]"),remove=e.target.closest("[data-removejob]");if(rename){const j=job(rename.dataset.rename),name=prompt("Tên công việc mới:",j?.name||"");if(name?.trim()){j.name=name.trim();j.updatedAt=new Date().toISOString();render();queueSave()}}if(remove){const j=job(remove.dataset.removejob);if(!j)return;if(!confirm(`Xóa "${j.name}"? Các ca thuộc công việc này cũng sẽ bị xóa.`))return;j.deletedAt=new Date().toISOString();j.updatedAt=j.deletedAt;state.shifts.filter(x=>x.jobId===j.id&&!x.deletedAt).forEach(x=>{x.deletedAt=j.deletedAt;x.updatedAt=j.deletedAt});render();queueSave()}});
+  $("jobList").addEventListener("click",e=>{const wage=e.target.closest("[data-wage]"),rename=e.target.closest("[data-rename]"),remove=e.target.closest("[data-removejob]");if(wage){const j=job(wage.dataset.wage);if(!j)return;const raw=prompt("Nhập mức lương VNĐ/giờ cho "+j.name+":",j.hourlyRate??"");if(raw===null)return;const value=raw.trim()===""?0:Number(raw.replace(/[.,\\s]/g,""));if(!Number.isFinite(value)||value<0){alert("Mức lương không hợp lệ.");return}j.hourlyRate=value;j.updatedAt=new Date().toISOString();render();queueSave()}if(rename){const j=job(rename.dataset.rename),name=prompt("Tên công việc mới:",j?.name||"");if(name?.trim()){j.name=name.trim();j.updatedAt=new Date().toISOString();render();queueSave()}}if(remove){const j=job(remove.dataset.removejob);if(!j)return;if(!confirm(`Xóa "${j.name}"? Các ca thuộc công việc này cũng sẽ bị xóa.`))return;j.deletedAt=new Date().toISOString();j.updatedAt=j.deletedAt;state.shifts.filter(x=>x.jobId===j.id&&!x.deletedAt).forEach(x=>{x.deletedAt=j.deletedAt;x.updatedAt=j.deletedAt});render();queueSave()}});
   $("jobList").addEventListener("change",e=>{const c=e.target.closest("[data-color]");if(c){const j=job(c.dataset.color);if(j){j.color=c.value;j.updatedAt=new Date().toISOString();render();queueSave()}}});
   $("saveSettings").onclick=()=>{state.settings={restHours:Number($("restHours").value)||0,weeklyGoal:Number($("weeklyGoal").value)||0,dailyLimit:Math.max(1,Number($("dailyLimit").value)||1)};render();queueSave();$("ruleResult").textContent="Đã lưu cài đặt.";};
   $("checkRules").onclick=checkRules;$("makeExport").onclick=makeExport;$("copyExport").onclick=async()=>{if(!$("exportText").value)makeExport();try{await navigator.clipboard.writeText($("exportText").value);$("copyStatus").textContent="Đã sao chép lịch."; }catch{$("exportText").select();document.execCommand("copy");$("copyStatus").textContent="Đã sao chép lịch."}};
