@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;var f=document.createElement(\'script\');f.src=\'https://unpkg.com/@supabase/supabase-js@2\';document.head.appendChild(f)"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;var f=document.createElement('script');f.src='https://unpkg.com/@supabase/supabase-js@2';document.head.appendChild(f)"></script>
   <style>
     :root{--bg:#060a13;--panel:#0b1220;--panel2:#101b2d;--line:#223653;--muted:#8799b5;--text:#e8f0ff;--cyan:#35dffc;--purple:#b184ff;--pink:#ff779c;--orange:#ffb45f;--radius:22px}
     *{box-sizing:border-box} html{color-scheme:dark} body{margin:0;background:radial-gradient(ellipse at 15% -10%,#10223a 0,transparent 42%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh}
@@ -517,7 +517,7 @@
     if(!supabase){$("authStatus").className="status bad";$("authStatus").textContent=window.supabase?"Không khởi tạo được Supabase. Hãy tải lại trang.":"Không tải được thư viện đăng nhập. Kiểm tra mạng rồi thử lại.";return}
     const email=$("authEmail").value.trim(),password=$("authPassword").value;
     if(!email||!password){$("authStatus").textContent="Vui lòng nhập email và mật khẩu.";return}
-    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){$("authStatus").textContent="Địa chỉ email chưa hợp lệ.";return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$("authStatus").textContent="Địa chỉ email chưa hợp lệ.";return}
     if(kind==="up"&&password.length<6){$("authStatus").textContent="Mật khẩu cần ít nhất 6 ký tự.";return}
     const buttons=[$("signIn"),$("signUp")];buttons.forEach(b=>b.disabled=true);
     $("authStatus").className="status";$("authStatus").textContent=kind==="up"?"Đang tạo tài khoản…":"Đang đăng nhập…";
