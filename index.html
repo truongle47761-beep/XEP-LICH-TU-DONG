@@ -300,7 +300,8 @@
     for(let pass=0;pass<3;pass++){
       let progress=false;
       for(const day of [...new Set(candidates.map(x=>x.day))]){
-        const dayChosen=chosen.filter(x=>{const d=Math.round((parseDate(x.date)-parseDate(week))/86400000);return d===day});\n         const options=candidates.filter(x=>x.day===day&&!used.has(x.job.job.id+"|"+x.day+"|"+x.slot)&&!dayChosen.some(y=>y.jobId===x.job.job.id)&&x.job.done+0.001<x.job.target).sort((a,b)=>{const mode=$("autoMode").value||"alternate";if(mode==="alternate"&&dayChosen.length){const aNew=!dayChosen.some(y=>y.jobId===a.job.job.id),bNew=!dayChosen.some(y=>y.jobId===b.job.job.id);if(aNew!==bNew)return aNew?-1:1}return (b.job.target-b.job.done)/b.job.target-(a.job.target-a.job.done)/a.job.target});
+        const dayChosen=chosen.filter(x=>{const d=Math.round((parseDate(x.date)-parseDate(week))/86400000);return d===day});
+         const options=candidates.filter(x=>x.day===day&&!used.has(x.job.job.id+"|"+x.day+"|"+x.slot)&&!dayChosen.some(y=>y.jobId===x.job.job.id)&&x.job.done+0.001<x.job.target).sort((a,b)=>{const mode=$("autoMode").value||"alternate";if(mode==="alternate"&&dayChosen.length){const aNew=!dayChosen.some(y=>y.jobId===a.job.job.id),bNew=!dayChosen.some(y=>y.jobId===b.job.job.id);if(aNew!==bNew)return aNew?-1:1}return (b.job.target-b.job.done)/b.job.target-(a.job.target-a.job.done)/a.job.target});
         for(const c of options){
           if((perDay[day]||0)>=dailyMax)break;
           if(c.job.done+c.len>c.job.target+0.001)continue;
