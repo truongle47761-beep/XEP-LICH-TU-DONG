@@ -80,16 +80,20 @@
     #weekView .deletezone{padding:11px;margin-top:3px;font-size:12px;border-radius:12px}
     #weekView .hint,#weekView>p.muted{font-size:11px;margin-top:8px}
     @media(max-width:700px){
-      #weekView .week{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-      #weekView .day{min-height:120px;padding:9px}
-      #weekView .dayhead{font-size:12px}
-      #weekView .shift{padding:9px 7px;margin:6px 0}
-      #weekView .shift b{font-size:12px}
-      #weekView .shift .time{font-size:13px}
-      #weekView .shift .note{font-size:10px}
-      #weekView .stat{padding:9px 7px}
-      #weekView .stat strong{font-size:19px}
-      #weekView .stat span{font-size:10px}
+      /* Điện thoại: 2 cột cân đối, thẻ ca đủ lớn để đọc và thao tác */
+      #weekView .week{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      #weekView .day{min-height:165px;padding:11px;border-radius:15px}
+      #weekView .dayhead{font-size:13px;margin-bottom:10px}
+      #weekView .dayhead time{font-size:11px}
+      #weekView .shift{padding:11px 9px;margin:7px 0;border-radius:12px}
+      #weekView .shift b{font-size:13px;line-height:1.35;margin-bottom:8px;padding-right:19px}
+      #weekView .shift .time{font-size:14px;line-height:1.4}
+      #weekView .shift .note{font-size:11px;line-height:1.4;-webkit-line-clamp:3}
+      #weekView .shift .x{width:23px;height:23px;font-size:17px}
+      #weekView .shift .edit{font-size:10px;padding:4px 6px}
+      #weekView .stat{padding:10px 8px}
+      #weekView .stat strong{font-size:20px}
+      #weekView .stat span{font-size:11px}
     }
   </style>
 </head>
