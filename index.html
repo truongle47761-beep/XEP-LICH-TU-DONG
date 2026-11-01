@@ -60,6 +60,37 @@
     .modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modalhead h3{margin:0}.close{border:0;background:#1c2a3d;border-radius:10px;padding:8px 12px}
     .inline{display:flex;gap:10px;align-items:center}.inline>*{flex:1}
     @media(max-width:700px){.app{padding:18px 12px 38px}.panel{padding:14px}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:23px}.stat span{font-size:11px}.grid2{grid-template-columns:1fr}.account .btn{padding:9px 11px}.brand p{font-size:11px}.week{grid-template-columns:repeat(7, minmax(220px, 78vw));gap:10px}.day{min-height:260px}.modalback{align-items:flex-end;padding:0}.modal{border-radius:22px 22px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}}
+
+    /* Lịch tuần gọn: ưu tiên xem được nhiều ngày cùng lúc */
+    #weekView .stats{gap:8px;margin-bottom:12px}
+    #weekView .stat{padding:10px 12px;border-radius:13px}
+    #weekView .stat strong{font-size:21px;margin-bottom:3px}
+    #weekView .legend{gap:6px;margin:9px 0 12px}
+    #weekView .chip{padding:6px 9px;font-size:11px}
+    #weekView .week{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;overflow:visible;padding:2px 0 8px}
+    #weekView .day{min-width:0;min-height:150px;padding:8px;border-radius:13px}
+    #weekView .dayhead{display:block;margin-bottom:8px;font-size:12px;line-height:1.35}
+    #weekView .dayhead time{display:block;font-size:10px;margin-top:2px}
+    #weekView .shift{padding:8px 6px;margin:6px 0;border-radius:10px}
+    #weekView .shift b{font-size:11px;line-height:1.25;margin-bottom:6px;padding-right:16px;overflow-wrap:anywhere}
+    #weekView .shift .time{font-size:12px;display:block;line-height:1.3}
+    #weekView .shift .note{font-size:10px;margin-top:4px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    #weekView .shift .x{width:20px;height:20px;right:4px;top:4px;font-size:15px}
+    #weekView .shift .edit{right:4px;bottom:4px;padding:3px 5px;font-size:9px}
+    #weekView .deletezone{padding:11px;margin-top:3px;font-size:12px;border-radius:12px}
+    #weekView .hint,#weekView>p.muted{font-size:11px;margin-top:8px}
+    @media(max-width:700px){
+      #weekView .week{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      #weekView .day{min-height:120px;padding:9px}
+      #weekView .dayhead{font-size:12px}
+      #weekView .shift{padding:9px 7px;margin:6px 0}
+      #weekView .shift b{font-size:12px}
+      #weekView .shift .time{font-size:13px}
+      #weekView .shift .note{font-size:10px}
+      #weekView .stat{padding:9px 7px}
+      #weekView .stat strong{font-size:19px}
+      #weekView .stat span{font-size:10px}
+    }
   </style>
 </head>
 <body>
